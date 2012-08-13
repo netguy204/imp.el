@@ -28,12 +28,33 @@
 
     <script type="text/javascript">
       var sequence = 0;
+      var max_period = 10000;
+      var min_period = 200;
+      var next_period = min_period;
+      var alpha = 1.6;
+
+      var nextTimeout = function() {
+        var next = next_period;
+        next_period = Math.min(max_period, next_period * alpha);
+        return next;
+      };
+
+      var resetTimeout = function() {
+        next_period = min_period;
+      };
 
       var lastText = '';
+      var iframe = $('#content')[0];
+      var doc = (iframe.contentDocument) ? iframe.contentDocument : iframe.Document;
+
       var setIframe = function(newText) {
         if(newText !== lastText) {
-          $('#content').contents().find('html').html(newText);
+          doc.open();
+          doc.write(newText);
+          doc.close();
+          //$('#content').contents().find('html').html(newText);
           lastText = newText;
+          resetTimeout();
         }
       }
 
@@ -41,8 +62,12 @@
         var url = "/imp?nocache=" + sequence;
         sequence += 1;
 
-        $.get(url, setIframe);
-        setTimeout(refresh, 1000);
+        var gotData = function(data) {
+          setIframe(data);
+          setTimeout(refresh, nextTimeout());
+        };
+          
+        $.get(url, gotData);
       };
 
       $(document).ready(function() {
