@@ -1,6 +1,6 @@
 (require 'simple-httpd)
 
-(defvar imp-shim-root "~/.emacs.d/imp/")
+(defvar imp-shim-root (file-name-directory (locate-library "imp")))
 (defvar imp-current-buffer nil)
 
 (defun httpd/imp-shim (proc path &rest args)
