@@ -16,7 +16,9 @@
 (defservlet imp text/html (path)
   (cond
    ((and imp-current-buffer imp-htmlize-filter)
-    (insert-buffer (htmlize-buffer imp-current-buffer)))
+    (let ((pretty-buffer (htmlize-buffer imp-current-buffer)))
+      (insert-buffer pretty-buffer)
+      (kill-buffer pretty-buffer)))
 
    (imp-current-buffer (insert-buffer imp-current-buffer))
    
