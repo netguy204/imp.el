@@ -28,10 +28,10 @@
 
     <script type="text/javascript">
       var sequence = 0;
-      var max_period = 10000;
+      var max_period = 60000;
       var min_period = 200;
       var next_period = min_period;
-      var alpha = 1.6;
+      var alpha = 1.2;
 
       var nextTimeout = function() {
         var next = next_period;
@@ -44,11 +44,12 @@
       };
 
       var lastText = '';
-      var iframe = $('#content')[0];
-      var doc = (iframe.contentDocument) ? iframe.contentDocument : iframe.Document;
+      var doc = null;
 
       var setIframe = function(newText) {
         if(newText !== lastText) {
+          var iframe = $('#content')[0];
+          var doc = (iframe.contentDocument) ? iframe.contentDocument : iframe.Document;
           doc.open();
           doc.write(newText);
           doc.close();
