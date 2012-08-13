@@ -1,7 +1,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <script type="text/javascript" src="/imp-shim/jquery.js"></script>
-    <script type="text/javascript" src="/imp-shim/URI.js"></script>
 
     <style type="text/css"> 
       html {
@@ -28,16 +27,22 @@
     </iframe>
 
     <script type="text/javascript">
-      // parse out the target page
-      var parms = URI(window.location.href).query(true);
-      var page = parms['target'];
-      var iframe = $("#content")[0];
-
       var sequence = 0;
+
+      var lastText = '';
+      var setIframe = function(newText) {
+        if(newText !== lastText) {
+          $('#content').contents().find('html').html(newText);
+          lastText = newText;
+        }
+      }
+
       var refresh = function() {
-        iframe.src = page + "?nocache=" + sequence;
+        var url = "/imp?nocache=" + sequence;
         sequence += 1;
-        //setTimeout(refresh, 1000);
+
+        $.get(url, setIframe);
+        setTimeout(refresh, 1000);
       };
 
       $(document).ready(function() {

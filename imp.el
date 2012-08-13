@@ -17,3 +17,5 @@
 (defun imp-set-current-buffer (buffer)
   (interactive "bbuffer:")
   (setq imp-current-buffer buffer))
+
+(provide 'imp)
