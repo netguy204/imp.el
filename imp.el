@@ -24,10 +24,10 @@
     (cond
      ((and imp-current-buffer imp-htmlize-filter)
       (let ((pretty-buffer (htmlize-buffer imp-current-buffer)))
-        (insert-buffer pretty-buffer)
+        (insert-buffer-substring pretty-buffer)
         (kill-buffer pretty-buffer)))
 
-     (imp-current-buffer (insert-buffer imp-current-buffer))
+     (imp-current-buffer (insert-buffer-substring imp-current-buffer))
    
      (t
       (insert "run imp-set-current-buffer with the buffer you want to monitor")))
@@ -60,9 +60,9 @@
 
   (with-current-buffer buffer
     (add-hook 'after-change-functions 'imp--on-change nil t))
-  (setq imp-current-buffer buffer)
 
   ;; wake up any listeners
+  (setq imp-current-buffer buffer)
   (imp--on-change))
 
 (defun imp-set-current-buffer (buffer)
