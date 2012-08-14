@@ -59,7 +59,10 @@
 
   (with-current-buffer buffer
     (add-hook 'after-change-functions 'imp--on-change nil t))
-  (setq imp-current-buffer buffer))
+  (setq imp-current-buffer buffer)
+
+  ;; wake up any listeners
+  (imp--on-change))
 
 (defun imp-set-current-buffer (buffer)
   "sets BUFFER to be the buffer watched for changes by imp"
