@@ -32,6 +32,7 @@
      (t
       (insert "run imp-set-current-buffer with the buffer you want to monitor")))
 
+    (httpd-send-header proc "text/plain" 200)
     (httpd-send-buffer proc (current-buffer))))
 
 (defun imp-send-state (proc)
