@@ -17,9 +17,24 @@ Add the library to your load path and load it:
 (require 'imp)
 ```
 
+Also, make sure you enable _simple-httpd_'s optional servlet support
+
+``` elisp
+(require 'simple-httpd)
+(setq httpd-servlets t)
+```
+
 Set the buffer you want to live edit with:
 
+```
 M-x imp-set-current-buffer
+```
+
+If you'd rather see the contents of your buffer colorized in your browser (instead of being rendered), set the buffer you want with:
+
+```
+M-x imp-set-current-buffer-htmlize
+```
 
 And then point your browser to http://localhost:8080/imp-shim and
 watch your changes appear as you type!

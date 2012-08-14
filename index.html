@@ -32,6 +32,7 @@
       var min_period = 200;
       var next_period = min_period;
       var alpha = 1.2;
+      var current_id = '-1';
 
       var nextTimeout = function() {
         var next = next_period;
@@ -43,21 +44,27 @@
         next_period = min_period;
       };
 
-      var lastText = '';
-      var doc = null;
+      var printIframe = function(data) {
+        var iframe = $('#content')[0];
+        var doc = (iframe.contentDocument) ? iframe.contentDocument : iframe.Document;
+        doc.open();
+        doc.write(data);
+        doc.close();
+      };
 
       var setIframe = function(newText) {
-        if(newText !== lastText) {
-          var iframe = $('#content')[0];
-          var doc = (iframe.contentDocument) ? iframe.contentDocument : iframe.Document;
-          doc.open();
-          doc.write(newText);
-          doc.close();
-          //$('#content').contents().find('html').html(newText);
+        var spaceIdx = newText.indexOf(' ');
+        if(spaceIdx == -1) {
+          // error parsing client result
+          printIframe('error parsing the response from emacs');
+        } else {
+          current_id = newText.substr(0, spaceIdx);
+          var html_string = newText.substr(spaceIdx + 1);
+          printIframe(html_string);
           lastText = newText;
-          resetTimeout();
         }
-      }
+        resetTimeout();
+      };
 
       var refresh = function() {
         var url = "/imp?nocache=" + sequence;
@@ -68,7 +75,7 @@
           setTimeout(refresh, nextTimeout());
         };
           
-        $.get(url, gotData);
+        $.get(url + '&id=' + current_id, gotData);
       };
 
       $(document).ready(function() {
