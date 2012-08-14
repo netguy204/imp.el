@@ -10,10 +10,22 @@
 (defun httpd/imp-shim (proc path &rest args)
   (let* ((file (file-name-nondirectory path))
          (clean (expand-file-name file imp-shim-root))
-         (index (expand-file-name "index.html" imp-shim-root)))
+         (index (expand-file-name "index.html" imp-shim-root))
+         (buffer-name (when imp-current-buffer 
+                        (buffer-file-name (get-buffer imp-current-buffer))))
+         (buffer-dir (when buffer-name
+                       (file-name-directory buffer-name)))
+         (buffer-clean (when buffer-dir
+                         (expand-file-name file buffer-dir))))
     (cond
      ((file-directory-p clean) (httpd-send-file proc index))
-     (t (httpd-send-file proc clean)))))
+     ((file-exists-p clean) (httpd-send-file proc clean))
+
+     ;; try to serve from the buffer directory if we could determine that
+     (buffer-clean (httpd-send-file proc buffer-clean))
+     
+     ;; no luck. it's an error
+     (t (httpd-error proc 403)))))
 
 (defun imp--send-state (proc)
   (with-temp-buffer
@@ -35,7 +47,7 @@
     (httpd-send-header proc "text/plain" 200)
     (httpd-send-buffer proc (current-buffer))))
 
-(defun imp-send-state (proc)
+(defun imp--send-state-ignore-errors (proc)
   (condition-case error-case
       (imp--send-state proc)
     (error nil)))
@@ -43,7 +55,7 @@
 (defun imp--on-change (&rest args)
   (incf imp-last-state)
   (while imp-client-list
-    (imp-send-state (pop imp-client-list))))
+    (imp--send-state-ignore-errors (pop imp-client-list))))
 
 (defun httpd/imp (proc path query &rest args)
   (let* ((req-last-id (string-to-number (cadr (assoc "id" query)))))
@@ -51,12 +63,14 @@
         ;; this client is sync'd up, store in waitlist
         (push proc imp-client-list)
       ;; this client is behind, respond immediately
-      (imp-send-state proc))))
+      (imp--send-state-ignore-errors proc))))
 
 (defun imp--move-active-buffer (buffer)
   (when imp-current-buffer
-    (with-current-buffer imp-current-buffer
-      (remove-hook 'after-change-functions 'imp--on-change t)))
+    (condition-case error-case
+        (with-current-buffer imp-current-buffer
+          (remove-hook 'after-change-functions 'imp--on-change t))
+      (error nil)))
 
   (with-current-buffer buffer
     (add-hook 'after-change-functions 'imp--on-change nil t))
