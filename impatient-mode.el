@@ -66,8 +66,8 @@
   (make-local-variable 'imp-last-state)
   (setq imp-htmlize-filter (not (eq major-mode 'html-mode)))
   (if impatient-mode
-      (add-hook 'after-change-functions 'imp--on-change)
-    (remove-hook 'after-change-functions 'imp--on-change)))
+      (add-hook 'after-change-functions 'imp--on-change nil t)
+    (remove-hook 'after-change-functions 'imp--on-change t)))
 
 (defvar imp-shim-root (file-name-directory load-file-name)
   "Location of data files needed by impatient-mode.")
