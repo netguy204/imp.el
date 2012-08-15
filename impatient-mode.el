@@ -102,6 +102,7 @@
                         (url-hexify-string (buffer-name buffer))
                         (url-insert-entities-in-string (buffer-name buffer))))))
     (insert "</ul>\n<hr/>")
+    (insert "Enable <code>impatient-mode</code> in buffers to publish them.")
     (insert "</body></html>")))
 
 (defun httpd/imp (proc path &rest args)
