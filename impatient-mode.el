@@ -155,7 +155,8 @@
           (if (equal req-last-id imp-last-state)
               (push proc imp-client-list)         ; this client is sync'd
             (imp--send-state-ignore-errors proc))) ; this client is behind
-      (httpd-error proc 403 (format "Buffer %s is private or doesn't exist." buffer-name)))))
+      (httpd-error proc 403 (format "Buffer %s is private or doesn't exist."
+                                    buffer-name)))))
 
 (provide 'impatient-mode)
 
