@@ -45,6 +45,11 @@
 (defvar imp-shim-root (file-name-directory load-file-name)
   "Location of data files needed by impatient-mode.")
 
+(defun imp-toggle-htmlize ()
+  "Toggle htmlization of this buffer before sending to clients."
+  (interactive)
+  (setq imp-htmlize-filter (not imp-htmlize-filter)))
+
 (defun imp-buffer-enabled-p (buffer)
   "Return t if buffer has impatient-mode enabled."
   (and buffer (with-current-buffer (get-buffer buffer) impatient-mode)))
