@@ -98,23 +98,26 @@
     (insert "<h1>Public Buffers</h1>\n<hr/>")
     (insert "<ul>\n")
     (dolist (buffer (remove-if-not 'imp-buffer-enabled-p (buffer-list)))
-      (insert (format "<li><a href=\"%s\">%s</a></li>\n"
+      (insert (format "<li><a href=\"live/%s\">%s</a></li>\n"
                       (url-hexify-string (buffer-name buffer))
                       (url-insert-entities-in-string (buffer-name buffer)))))
     (insert "</ul>\n<hr/>")
     (insert "Enable <code>impatient-mode</code> in buffers to publish them.")
     (insert "</body></html>")))
 
-(defun httpd/imp (proc path &rest args)
-  "Serve up the main buffer access page."
+(defun httpd/imp/live (proc path &rest args)
+  "Serve up the shim that lets us watcha buffer change"
   (let* ((index (expand-file-name "index.html" imp-shim-root))
          (buffer-name (file-name-nondirectory path))
          (buffer (get-buffer buffer-name)))
-    (if (equal (directory-file-name path) "/imp")
+    (if (imp-buffer-enabled-p buffer)
+        (httpd-send-file proc index)
+      (httpd-error proc 403 "Buffer is private or doesn't exist."))))
+
+(defun httpd/imp (proc path &rest args)
+  (if (equal (directory-file-name path) "/imp")
         (imp-serve-buffer-list proc)
-      (if (imp-buffer-enabled-p buffer)
-          (httpd-send-file proc index)
-        (httpd-error proc 403 "Buffer is private or doesn't exist.")))))
+    (httpd-error proc 403 (format "%s not found" path))))
 
 (defun imp--send-state (proc)
   (let ((id (number-to-string imp-last-state))
@@ -143,14 +146,15 @@
 
 (defun httpd/imp/buffer (proc path query &rest args)
   "Servlet that accepts long poll requests."
-  (let* ((buffer (get-buffer (file-name-nondirectory path)))
+  (let* ((buffer-name (file-name-nondirectory path))
+         (buffer (get-buffer buffer-name))
          (req-last-id (string-to-number (or (cadr (assoc "id" query)) "0"))))
     (if (imp-buffer-enabled-p buffer)
         (with-current-buffer buffer
           (if (equal req-last-id imp-last-state)
               (push proc imp-client-list)         ; this client is sync'd
             (imp--send-state-ignore-errors proc))) ; this client is behind
-      (httpd-error proc 403 "Buffer is private or doesn't exist."))))
+      (httpd-error proc 403 (format "Buffer %s is private or doesn't exist." buffer-name)))))
 
 (provide 'impatient-mode)
 

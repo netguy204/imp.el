@@ -27,7 +27,8 @@
     </iframe>
 
     <script type="text/javascript">
-      var buffer = window.location.pathname.split('/')[2];
+      var path_parts = window.location.pathname.split('/');
+      var buffer = path_parts[path_parts.length - 1];
       var max_period = 60000;
       var min_period = 200;
       var next_period = min_period;
