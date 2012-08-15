@@ -51,9 +51,8 @@
         (kill-buffer pretty-buffer)))
 
      (imp-current-buffer (insert-buffer-substring imp-current-buffer))
-   
-     (t
-      (insert "run imp-set-current-buffer with the buffer you want to monitor")))
+
+     (t (insert-file (expand-file-name "instructions.html" imp-shim-root))))
 
     (httpd-send-header proc "text/plain" 200)
     (httpd-send-buffer proc (current-buffer))))
