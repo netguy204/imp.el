@@ -3,8 +3,10 @@ Impatient Mode
 
 See the effect of your HTML as you type it.
 
-This mode uses the _simple-httpd_ webserver that runs within emacs to
-serve up your HTML buffers as you edit them.
+This package requires both _simple-httpd_ and _htmlize_ in order to
+operate. The _simple-httpd_ webserver runs within emacs to serve up
+your buffers as you edit them. _htmlize_ is used to send font lock
+highlighting to clients for non-HTML buffers.
 
 _simple-httpd_ can be installed through MELPA or directly from GitHub.
 
