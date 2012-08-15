@@ -35,6 +35,7 @@
 
 ;;; Code:
 
+(require 'cl)
 (require 'url-util)
 (require 'simple-httpd)
 (require 'htmlize)
@@ -96,11 +97,10 @@
     (insert "</head><body>\n")
     (insert "<h1>Public Buffers</h1>\n<hr/>")
     (insert "<ul>\n")
-    (dolist (buffer (buffer-list))
-      (when (imp-buffer-enabled-p buffer)
-        (insert (format "<li><a href=\"%s\">%s</a></li>\n"
-                        (url-hexify-string (buffer-name buffer))
-                        (url-insert-entities-in-string (buffer-name buffer))))))
+    (dolist (buffer (remove-if-not 'imp-buffer-enabled-p (buffer-list)))
+      (insert (format "<li><a href=\"%s\">%s</a></li>\n"
+                      (url-hexify-string (buffer-name buffer))
+                      (url-insert-entities-in-string (buffer-name buffer)))))
     (insert "</ul>\n<hr/>")
     (insert "Enable <code>impatient-mode</code> in buffers to publish them.")
     (insert "</body></html>")))
