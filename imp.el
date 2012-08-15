@@ -1,3 +1,14 @@
+;;; imp.el --- Serve buffers live over HTTP
+
+;; This is free and unencumbered software released into the public domain.
+
+;; Author: Brian Taylor <el.wubo@gmail.com>
+;; Version: 0.1
+;; URL: https://github.com/netguy204/imp.el
+;; Package-Requires: ((simple-httpd "1.1") (htmlize "1.40"))
+
+;;; Code:
+
 (require 'simple-httpd)
 (require 'htmlize)
 
@@ -92,3 +103,5 @@
   (setq imp-htmlize-filter t))
 
 (provide 'imp)
+
+;;; imp.el ends here
