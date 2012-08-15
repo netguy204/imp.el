@@ -3,6 +3,8 @@ Impatient Mode
 
 See the effect of your HTML as you type it.
 
+ * [YouTube demo](http://youtu.be/QV6XVyXjBO8)
+
 This package requires both _simple-httpd_ and _htmlize_ in order to
 operate. The _simple-httpd_ webserver runs within emacs to serve up
 your buffers as you edit them. _htmlize_ is used to send font lock
