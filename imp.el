@@ -9,6 +9,7 @@
 
 ;;; Code:
 
+(require 'url-util)
 (require 'simple-httpd)
 (require 'htmlize)
 
@@ -56,14 +57,29 @@
         (httpd-send-file proc clean)
       (httpd-error proc 404))))
 
+(defun imp-serve-buffer-list (proc)
+  "Serve a list of published buffers."
+  (with-httpd-buffer proc "text/html"
+    (insert "<html><head>\n")
+    (insert "<title>impatient-mode buffer list</title>\n")
+    (insert "</head><body>\n")
+    (insert "<h1>Public Buffers</h1>\n<hr/>")
+    (insert "<ul>\n")
+    (dolist (buffer (buffer-list))
+      (when (imp-buffer-enabled-p buffer)
+        (insert (format "<li><a href=\"%s\">%s</a></li>\n"
+                        (url-hexify-string (buffer-name buffer))
+                        (url-insert-entities-in-string (buffer-name buffer))))))
+    (insert "</ul>\n<hr/>")
+    (insert "</body></html>")))
+
 (defun httpd/imp (proc path &rest args)
   "Serve up the main buffer access page."
   (let* ((index (expand-file-name "index.html" imp-shim-root))
          (buffer-name (file-name-nondirectory path))
          (buffer (get-buffer buffer-name)))
     (if (equal (directory-file-name path) "/imp")
-        (with-httpd-buffer proc "text/plain"
-          (insert "This will eventually be a buffer listing."))
+        (imp-serve-buffer-list proc)
       (if (imp-buffer-enabled-p buffer)
           (httpd-send-file proc index)
         (httpd-error proc 403 "Buffer is private or doesn't exist.")))))
