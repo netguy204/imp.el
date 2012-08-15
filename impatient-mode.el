@@ -28,10 +28,10 @@
 ;; see your edits to an HTML document live! This is perhaps the
 ;; primary motivation of this mode.
 
-;; To receive updates the browser issues a "long-pull" on the client
-;; waiting for the buffer to change, so no polling is required. The
-;; response happens in an `after-change-functions' hook. Buffers that
-;; do not run these hooks will not be displayed live to clients.
+;; To receive updates the browser issues a long poll on the client
+;; waiting for the buffer to change -- server push. The response
+;; happens in an `after-change-functions' hook. Buffers that do not
+;; run these hooks will not be displayed live to clients.
 
 ;;; Code:
 
@@ -142,7 +142,7 @@
     (imp--send-state-ignore-errors (pop imp-client-list))))
 
 (defun httpd/imp/buffer (proc path query &rest args)
-  "Servlet that accepts long-pull requests."
+  "Servlet that accepts long poll requests."
   (let* ((buffer (get-buffer (file-name-nondirectory path)))
          (req-last-id (string-to-number (or (cadr (assoc "id" query)) "0"))))
     (if (imp-buffer-enabled-p buffer)
