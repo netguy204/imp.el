@@ -116,7 +116,8 @@
          (buffer-name (nth 2 parts))
          (file (httpd-clean-path (mapconcat 'identity (nthcdr 3 parts) "/")))
          (buffer (get-buffer buffer-name))
-         (buffer-dir (file-name-directory (buffer-file-name buffer))))
+         (buffer-file (buffer-file-name buffer))
+         (buffer-dir (and buffer-file (file-name-directory buffer-file))))
     (cond
      ((equal (file-name-directory path) "/imp/live/")
       (httpd-redirect proc (concat path "/")))
