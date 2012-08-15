@@ -1,7 +1,7 @@
 (require 'simple-httpd)
 (require 'htmlize)
 
-(defvar imp-shim-root (file-name-directory (locate-library "imp")))
+(defvar imp-shim-root (file-name-directory load-file-name))
 (defvar imp-current-buffer nil)
 (defvar imp-htmlize-filter nil)
 (defvar imp-client-list nil)
