@@ -115,9 +115,10 @@
       (httpd-error proc 403 "Buffer is private or doesn't exist."))))
 
 (defun httpd/imp (proc path &rest args)
-  (if (equal (directory-file-name path) "/imp")
-        (imp-serve-buffer-list proc)
-    (httpd-error proc 403 (format "%s not found" path))))
+  (cond
+   ((equal path "/imp")  (httpd-redirect proc "/imp/"))
+   ((equal path "/imp/") (imp-serve-buffer-list proc))
+   (t (httpd-error proc 403 (format "%s not found" path)))))
 
 (defun imp--send-state (proc)
   (let ((id (number-to-string imp-last-state))
