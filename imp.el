@@ -12,50 +12,74 @@
 (require 'simple-httpd)
 (require 'htmlize)
 
-(defvar imp-shim-root (file-name-directory load-file-name))
-(defvar imp-current-buffer nil)
-(defvar imp-htmlize-filter nil)
-(defvar imp-client-list nil)
-(defvar imp-last-state 0)
+(defgroup impatient-mode nil
+  "Serve buffers live over HTTP."
+  :group 'comm)
 
-(defun httpd/imp-shim (proc path &rest args)
+(defvar impatient-mode-map (make-sparse-keymap)
+  "Keymap for impatient-mode.")
+
+(defvar imp-htmlize-filter t
+  "If true, htmlize this buffer before serving.")
+
+(defvar imp-client-list ()
+  "List of client processes watching the current buffer.")
+
+(defvar imp-last-state 0
+  "State sequence number.")
+
+(define-minor-mode impatient-mode
+  "Serves the buffer live over HTTP."
+  :group 'impatient-mode
+  :lighter " imp"
+  :keymap impatient-mode-map
+  (make-local-variable 'imp-htmlize-filter)
+  (make-local-variable 'imp-client-list)
+  (make-local-variable 'imp-last-state)
+  (if impatient-mode
+      (add-hook 'after-change-functions 'imp--on-change)
+    (remove-hook 'after-change-functions 'imp--on-change)))
+
+(defvar imp-shim-root (file-name-directory load-file-name)
+  "Location of data files needed by impatient-mode.")
+
+(defun imp-buffer-enabled-p (buffer)
+  "Return t if buffer has impatient-mode enabled."
+  (and buffer (with-current-buffer (get-buffer buffer) impatient-mode)))
+
+(defun httpd/imp/static (proc path &rest args)
+  "Serve up static files."
   (let* ((file (file-name-nondirectory path))
-         (clean (expand-file-name file imp-shim-root))
-         (index (expand-file-name "index.html" imp-shim-root))
-         (buffer-name (when imp-current-buffer 
-                        (buffer-file-name (get-buffer imp-current-buffer))))
-         (buffer-dir (when buffer-name
-                       (file-name-directory buffer-name)))
-         (buffer-clean (when buffer-dir
-                         (expand-file-name file buffer-dir))))
-    (cond
-     ((file-directory-p clean) (httpd-send-file proc index))
-     ((file-exists-p clean) (httpd-send-file proc clean))
+         (clean (expand-file-name file imp-shim-root)))
+    (if (file-exists-p clean)
+        (httpd-send-file proc clean)
+      (httpd-error proc 404))))
 
-     ;; try to serve from the buffer directory if we could determine that
-     (buffer-clean (httpd-send-file proc buffer-clean))
-     
-     ;; no luck. it's an error
-     (t (httpd-error proc 403)))))
+(defun httpd/imp (proc path &rest args)
+  "Serve up the main buffer access page."
+  (let* ((index (expand-file-name "index.html" imp-shim-root))
+         (buffer-name (file-name-nondirectory path))
+         (buffer (get-buffer buffer-name)))
+    (if (equal (directory-file-name path) "/imp")
+        (with-httpd-buffer proc "text/plain"
+          (insert "This will eventually be a buffer listing."))
+      (if (imp-buffer-enabled-p buffer)
+          (httpd-send-file proc index)
+        (httpd-error proc 403 "Buffer is private or doesn't exist.")))))
 
 (defun imp--send-state (proc)
-  (with-temp-buffer
-    (insert (number-to-string imp-last-state))
-    (insert " ")
-
-    ;; render the real contents
-    (cond
-     ((and imp-current-buffer imp-htmlize-filter)
-      (let ((pretty-buffer (htmlize-buffer imp-current-buffer)))
-        (insert-buffer-substring pretty-buffer)
-        (kill-buffer pretty-buffer)))
-
-     (imp-current-buffer (insert-buffer-substring imp-current-buffer))
-
-     (t (insert-file (expand-file-name "instructions.html" imp-shim-root))))
-
-    (httpd-send-header proc "text/plain" 200)
-    (httpd-send-buffer proc (current-buffer))))
+  (let ((id (number-to-string imp-last-state))
+        (htmlize imp-htmlize-filter)
+        (buffer (current-buffer)))
+    (with-temp-buffer
+      (insert id " ")
+      (if htmlize
+          (let ((pretty-buffer (htmlize-buffer buffer)))
+            (insert-buffer-substring pretty-buffer)
+            (kill-buffer pretty-buffer))
+        (insert-buffer-substring buffer))
+      (httpd-send-header proc "text/plain" 200 '("Cache-Control" "no-cache"))
+      (httpd-send-buffer proc (current-buffer)))))
 
 (defun imp--send-state-ignore-errors (proc)
   (condition-case error-case
@@ -63,43 +87,21 @@
     (error nil)))
 
 (defun imp--on-change (&rest args)
+  "Hook for after-change-functions."
   (incf imp-last-state)
   (while imp-client-list
     (imp--send-state-ignore-errors (pop imp-client-list))))
 
-(defun httpd/imp (proc path query &rest args)
-  (let* ((req-last-id (string-to-number (cadr (assoc "id" query)))))
-    (if (equal req-last-id imp-last-state)
-        ;; this client is sync'd up, store in waitlist
-        (push proc imp-client-list)
-      ;; this client is behind, respond immediately
-      (imp--send-state-ignore-errors proc))))
-
-(defun imp--move-active-buffer (buffer)
-  (when imp-current-buffer
-    (condition-case error-case
-        (with-current-buffer imp-current-buffer
-          (remove-hook 'after-change-functions 'imp--on-change t))
-      (error nil)))
-
-  (with-current-buffer buffer
-    (add-hook 'after-change-functions 'imp--on-change nil t))
-
-  ;; wake up any listeners
-  (setq imp-current-buffer buffer)
-  (imp--on-change))
-
-(defun imp-set-current-buffer (buffer)
-  "sets BUFFER to be the buffer watched for changes by imp"
-  (interactive "bbuffer:")
-  (imp--move-active-buffer buffer)
-  (setq imp-htmlize-filter nil))
-
-(defun imp-set-current-buffer-htmlize (buffer)
-  "sets BUFFER to be the buffer watched for changes by imp"
-  (interactive "bbuffer:")
-  (imp--move-active-buffer buffer)
-  (setq imp-htmlize-filter t))
+(defun httpd/imp/buffer (proc path query &rest args)
+  "Servlet that accepts long-pull requests."
+  (let* ((buffer (get-buffer (file-name-nondirectory path)))
+         (req-last-id (string-to-number (or (cadr (assoc "id" query)) "0"))))
+    (if (imp-buffer-enabled-p buffer)
+        (with-current-buffer buffer
+          (if (equal req-last-id imp-last-state)
+              (push proc imp-client-list)         ; this client is sync'd
+            (imp--send-state-ignore-errors proc))) ; this client is behind
+      (httpd-error proc 403 "Buffer is private or doesn't exist."))))
 
 (provide 'imp)
 
