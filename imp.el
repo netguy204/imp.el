@@ -36,6 +36,7 @@
   (make-local-variable 'imp-htmlize-filter)
   (make-local-variable 'imp-client-list)
   (make-local-variable 'imp-last-state)
+  (setq imp-htmlize-filter (not (eq major-mode 'html-mode)))
   (if impatient-mode
       (add-hook 'after-change-functions 'imp--on-change)
     (remove-hook 'after-change-functions 'imp--on-change)))
