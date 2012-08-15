@@ -1,4 +1,4 @@
-;;; imp.el --- Serve buffers live over HTTP
+;;; impatient-mode.el --- Serve buffers live over HTTP
 
 ;; This is free and unencumbered software released into the public domain.
 
@@ -151,6 +151,6 @@
             (imp--send-state-ignore-errors proc))) ; this client is behind
       (httpd-error proc 403 "Buffer is private or doesn't exist."))))
 
-(provide 'imp)
+(provide 'impatient-mode)
 
-;;; imp.el ends here
+;;; impatient-mode.el ends here
