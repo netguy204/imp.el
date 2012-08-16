@@ -90,6 +90,11 @@
   "List of all buffers with impatient-mode enabled"
   (remove-if-not 'imp-buffer-enabled-p (buffer-list)))
 
+(defun imp--should-not-cache (path)
+  (let ((mime-type (httpd-get-mime (file-name-extension path))))
+    (member mime-type '("text/css" "text/html" "text/xml"
+                        "text/plain" "text/javascript"))))
+
 (defun httpd/imp/static (proc path &rest args)
   "Serve up static files."
   (let* ((file (file-name-nondirectory path))
@@ -127,6 +132,11 @@
          (buffer (get-buffer buffer-name))
          (buffer-file (buffer-file-name buffer))
          (buffer-dir (and buffer-file (file-name-directory buffer-file))))
+
+    (if (imp--should-not-cache path)
+        (httpd-send-header proc "text/plain" 200 '("Cache-Control" "no-cache"))
+      (httpd-send-header proc "text/plain" 200))
+
     (cond
      ((equal (file-name-directory path) "/imp/live/")
       (httpd-redirect proc (concat path "/")))
