@@ -90,7 +90,8 @@
   "List of all buffers with impatient-mode enabled"
   (remove-if-not 'imp-buffer-enabled-p (buffer-list)))
 
-(defun imp--should-not-cache (path)
+(defun imp--should-not-cache-p (path)
+  "True if the path should be stamped with a no-cache header"
   (let ((mime-type (httpd-get-mime (file-name-extension path))))
     (member mime-type '("text/css" "text/html" "text/xml"
                         "text/plain" "text/javascript"))))
@@ -133,7 +134,7 @@
          (buffer-file (buffer-file-name buffer))
          (buffer-dir (and buffer-file (file-name-directory buffer-file))))
 
-    (if (imp--should-not-cache path)
+    (if (imp--should-not-cache-p path)
         (httpd-send-header proc "text/plain" 200 '("Cache-Control" "no-cache"))
       (httpd-send-header proc "text/plain" 200 '("Cache-Control" "max-age=60, must-revalidate")))
 
