@@ -56,6 +56,9 @@
 (defvar imp-last-state 0
   "State sequence number.")
 
+(defvar imp-related-files nil
+  "Files that seem to be related to this buffer")
+
 (define-minor-mode impatient-mode
   "Serves the buffer live over HTTP."
   :group 'impatient-mode
@@ -64,6 +67,7 @@
   (make-local-variable 'imp-htmlize-filter)
   (make-local-variable 'imp-client-list)
   (make-local-variable 'imp-last-state)
+  (make-local-variable 'imp-related-files)
   (setq imp-htmlize-filter (not (eq major-mode 'html-mode)))
   (if impatient-mode
       (add-hook 'after-change-functions 'imp--on-change nil t)
@@ -75,11 +79,16 @@
 (defun imp-toggle-htmlize ()
   "Toggle htmlization of this buffer before sending to clients."
   (interactive)
-  (setq imp-htmlize-filter (not imp-htmlize-filter)))
+  (setq imp-htmlize-filter (not imp-htmlize-filter))
+  (imp--notify-clients))
 
 (defun imp-buffer-enabled-p (buffer)
   "Return t if buffer has impatient-mode enabled."
   (and buffer (with-current-buffer (get-buffer buffer) impatient-mode)))
+
+(defun imp--buffer-list ()
+  "List of all buffers with impatient-mode enabled"
+  (remove-if-not 'imp-buffer-enabled-p (buffer-list)))
 
 (defun httpd/imp/static (proc path &rest args)
   "Serve up static files."
@@ -97,7 +106,7 @@
     (insert "</head><body>\n")
     (insert "<h1>Public Buffers</h1>\n<hr/>")
     (insert "<ul>\n")
-    (dolist (buffer (remove-if-not 'imp-buffer-enabled-p (buffer-list)))
+    (dolist (buffer (imp--buffer-list))
       (insert (format "<li><a href=\"live/%s/\">%s</a></li>\n"
                       (url-hexify-string (buffer-name buffer))
                       (url-insert-entities-in-string (buffer-name buffer)))))
@@ -123,7 +132,14 @@
       (httpd-redirect proc (concat path "/")))
      ((not (imp-buffer-enabled-p buffer)) (imp--private buffer-name))
      ((and (> (length file) 0) buffer-dir)
-      (httpd-send-file proc (expand-file-name file buffer-dir)))
+      (let* ((full-file-name (expand-file-name file buffer-dir))
+             (live-buffer (remove-if-not
+                           (lambda (buf) (equal full-file-name (buffer-file-name buf)))
+                           (imp--buffer-list))))
+        (add-to-list 'imp-related-files full-file-name)
+        (if live-buffer
+            (httpd-send-buffer proc (car live-buffer))
+          (httpd-send-file proc full-file-name))))
      (t (imp-buffer-enabled-p buffer) (httpd-send-file proc index)))))
 
 (defun httpd/imp (proc path &rest args)
@@ -151,11 +167,23 @@
       (imp--send-state proc)
     (error nil)))
 
+(defun imp--notify-clients ()
+  (while imp-client-list
+    (imp--send-state-ignore-errors (pop imp-client-list))))
+
 (defun imp--on-change (&rest args)
   "Hook for after-change-functions."
   (incf imp-last-state)
-  (while imp-client-list
-    (imp--send-state-ignore-errors (pop imp-client-list))))
+
+  ;; notify our clients
+  (imp--notify-clients)
+
+  ;; notify any clients that we're in the imp-related-files list for
+  (let ((buffer-file (buffer-file-name (current-buffer))))
+    (dolist (buffer (imp--buffer-list))
+      (with-current-buffer buffer
+        (when (member buffer-file imp-related-files)
+          (imp--notify-clients))))))
 
 (defun httpd/imp/buffer (proc path query &rest args)
   "Servlet that accepts long poll requests."
