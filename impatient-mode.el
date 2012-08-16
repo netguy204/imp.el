@@ -135,7 +135,7 @@
 
     (if (imp--should-not-cache path)
         (httpd-send-header proc "text/plain" 200 '("Cache-Control" "no-cache"))
-      (httpd-send-header proc "text/plain" 200))
+      (httpd-send-header proc "text/plain" 200 '("Cache-Control" "max-age=60, must-revalidate")))
 
     (cond
      ((equal (file-name-directory path) "/imp/live/")
