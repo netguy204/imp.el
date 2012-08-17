@@ -29,7 +29,7 @@
     <script type="text/javascript">
       var buffer = window.location.pathname.split('/')[3];
       var max_period = 60000;
-      var min_period = 200;
+      var min_period = 1000;
       var next_period = min_period;
       var alpha = 1.2;
       var current_id = '-1';
@@ -67,18 +67,22 @@
           printIframe(html_string);
           lastText = newText;
         }
-        resetTimeout();
       };
 
       var refresh = function() {
         var url = "/imp/buffer/" + buffer;
 
         var gotData = function(data) {
+          resetTimeout();
           setIframe(data);
+          refresh();
+        };
+
+        var errorRetry = function() {
           setTimeout(refresh, nextTimeout());
         };
 
-        $.get(url + '?id=' + current_id, gotData);
+        $.get(url + '?id=' + current_id, gotData).error(errorRetry);
       };
 
       $(document).ready(function() {
