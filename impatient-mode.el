@@ -5,7 +5,7 @@
 ;; Author: Brian Taylor <el.wubo@gmail.com>
 ;; Version: 0.1
 ;; URL: https://github.com/netguy204/imp.el
-;; Package-Requires: ((simple-httpd "1.1.2") (htmlize "1.40"))
+;; Package-Requires: ((simple-httpd "1.2.0") (htmlize "1.40"))
 
 ;;; Commentary:
 
@@ -96,12 +96,12 @@
     (member mime-type '("text/css" "text/html" "text/xml"
                         "text/plain" "text/javascript"))))
 
-(defun httpd/imp/static (proc path &rest args)
+(defun httpd/imp/static (proc path query req)
   "Serve up static files."
   (let* ((file (file-name-nondirectory path))
          (clean (expand-file-name file imp-shim-root)))
     (if (file-exists-p clean)
-        (httpd-send-file proc clean)
+        (httpd-send-file proc clean req)
       (httpd-error proc 404))))
 
 (defun imp-serve-buffer-list (proc)
@@ -124,7 +124,7 @@
   (httpd-error proc 403
                (format "Buffer %s is private or doesn't exist." buffer-name)))
 
-(defun httpd/imp/live (proc path &rest args)
+(defun httpd/imp/live (proc path query req)
   "Serve up the shim that lets us watch a buffer change"
   (let* ((index (expand-file-name "index.html" imp-shim-root))
          (parts (cdr (split-string path "/")))
@@ -151,8 +151,8 @@
                   (httpd-send-header proc "text/plain" 200 '("Cache-Control" "max-age=60, must-revalidate")))
 
                 (httpd-send-buffer proc (car live-buffer)))
-          (httpd-send-file proc full-file-name))))
-     (t (imp-buffer-enabled-p buffer) (httpd-send-file proc index)))))
+          (httpd-send-file proc full-file-name req))))
+     (t (imp-buffer-enabled-p buffer) (httpd-send-file proc index req)))))
 
 (defun httpd/imp (proc path &rest args)
   (cond
