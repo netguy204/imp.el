@@ -38,6 +38,11 @@ M-x impatient-mode
 And then point your browser to http://localhost:8080/imp/, select a
 buffer, and watch your changes appear as you type!
 
+If you are editing HTML that references resources in other files (like
+CSS) you can enable impatient-mode on those buffers as well. This will
+cause your browser to live refresh the page when you edit a referenced
+resources.
+
 Except for `html-mode` buffers, buffer contents will be run through
 `htmlize` before sending to clients. This can be toggled at any time
 with `imp-toggle-htmlize`.
