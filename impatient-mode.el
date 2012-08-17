@@ -134,10 +134,6 @@
          (buffer-file (buffer-file-name buffer))
          (buffer-dir (and buffer-file (file-name-directory buffer-file))))
 
-    (if (imp--should-not-cache-p path)
-        (httpd-send-header proc "text/plain" 200 '("Cache-Control" "no-cache"))
-      (httpd-send-header proc "text/plain" 200 '("Cache-Control" "max-age=60, must-revalidate")))
-
     (cond
      ((equal (file-name-directory path) "/imp/live/")
       (httpd-redirect proc (concat path "/")))
@@ -149,7 +145,12 @@
                            (imp--buffer-list))))
         (add-to-list 'imp-related-files full-file-name)
         (if live-buffer
-            (httpd-send-buffer proc (car live-buffer))
+            (progn
+                (if (imp--should-not-cache-p path)
+                    (httpd-send-header proc "text/plain" 200 '("Cache-Control" "no-cache"))
+                  (httpd-send-header proc "text/plain" 200 '("Cache-Control" "max-age=60, must-revalidate")))
+
+                (httpd-send-buffer proc (car live-buffer)))
           (httpd-send-file proc full-file-name))))
      (t (imp-buffer-enabled-p buffer) (httpd-send-file proc index)))))
 

@@ -43,10 +43,14 @@
       var resetTimeout = function() {
         next_period = min_period;
       };
+      
+      var frameToDocument = function(iframe) {
+        return (iframe.contentDocument) ? iframe.contentDocument : iframe.Document;
+      };
 
       var printIframe = function(data) {
-        var iframe = $('#content')[0];
-        var doc = (iframe.contentDocument) ? iframe.contentDocument : iframe.Document;
+        var iframeJQ = $('#content');
+        var doc = frameToDocument(iframeJQ[0]);
         doc.open();
         doc.write(data);
         doc.close();
@@ -78,6 +82,18 @@
       };
 
       $(document).ready(function() {
+        var iframeJQ = $('#content');
+        iframeJQ.load(function() {
+          // now we need to tweak the stylesheet links so that firefox will refresh them properly
+          $('link', frameToDocument(iframeJQ[0])).each(function(index, el) {
+            var href = $(el).attr('href');
+            // don't refresh the random data:text stylesheets that chrome inserts
+            if(href && href.indexOf('data:text') != 0) {
+              $(el).attr('href', $(el).attr('href') + '?' + new Date().getTime());
+            }
+          });
+        });
+
         refresh();
       });
     </script>
