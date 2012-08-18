@@ -38,6 +38,15 @@ require it:
 (require 'impatient-mode)
 ```
 
+Using _impatient-mode_
+----------------------
+
+Enable the web server provided by _simple-httpd_:
+
+```el
+M-x httpd-start
+```
+
 Publish buffers by enabling the minor mode `impatient-mode`.
 
 ```
