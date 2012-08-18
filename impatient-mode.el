@@ -59,6 +59,7 @@
 (defvar imp-related-files nil
   "Files that seem to be related to this buffer")
 
+;;;###autoload
 (define-minor-mode impatient-mode
   "Serves the buffer live over HTTP."
   :group 'impatient-mode
