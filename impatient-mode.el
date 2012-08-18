@@ -5,7 +5,7 @@
 ;; Author: Brian Taylor <el.wubo@gmail.com>
 ;; Version: 0.1
 ;; URL: https://github.com/netguy204/imp.el
-;; Package-Requires: ((simple-httpd "1.2.0") (htmlize "1.40"))
+;; Package-Requires: ((simple-httpd "1.2.1") (htmlize "1.40"))
 
 ;;; Commentary:
 
@@ -121,7 +121,7 @@
     (insert "Enable <code>impatient-mode</code> in buffers to publish them.")
     (insert "</body></html>")))
 
-(defun imp--private (buffer-name)
+(defun imp--private (proc buffer-name)
   (httpd-error proc 403
                (format "Buffer %s is private or doesn't exist." buffer-name)))
 
@@ -138,7 +138,7 @@
     (cond
      ((equal (file-name-directory path) "/imp/live/")
       (httpd-redirect proc (concat path "/")))
-     ((not (imp-buffer-enabled-p buffer)) (imp--private buffer-name))
+     ((not (imp-buffer-enabled-p buffer)) (imp--private proc buffer-name))
      ((and (> (length file) 0) buffer-dir)
       (let* ((full-file-name (expand-file-name file buffer-dir))
              (live-buffer (remove-if-not
@@ -208,7 +208,7 @@
           (if (equal req-last-id imp-last-state)
               (push proc imp-client-list)         ; this client is sync'd
             (imp--send-state-ignore-errors proc))) ; this client is behind
-      (imp--private buffer-name))))
+      (imp--private proc buffer-name))))
 
 (provide 'impatient-mode)
 
