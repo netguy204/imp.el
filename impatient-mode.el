@@ -148,9 +148,11 @@
         (if live-buffer
             (progn
                 (if (imp--should-not-cache-p path)
-                    (httpd-send-header proc "text/plain" 200 '("Cache-Control" "no-cache"))
-                  (httpd-send-header proc "text/plain" 200 '("Cache-Control" "max-age=60, must-revalidate")))
-
+                    (httpd-send-header proc "text/plain" 200
+                                       '("Cache-Control" . "no-cache"))
+                  (httpd-send-header proc "text/plain" 200
+                                     '("Cache-Control" .
+                                       "max-age=60, must-revalidate")))
                 (httpd-send-buffer proc (car live-buffer)))
           (httpd-send-file proc full-file-name req))))
      (t (imp-buffer-enabled-p buffer) (httpd-send-file proc index req)))))
@@ -172,7 +174,7 @@
             (insert-buffer-substring pretty-buffer)
             (kill-buffer pretty-buffer))
         (insert-buffer-substring buffer))
-      (httpd-send-header proc "text/plain" 200 '("Cache-Control" "no-cache"))
+      (httpd-send-header proc "text/plain" 200 '("Cache-Control" . "no-cache"))
       (httpd-send-buffer proc (current-buffer)))))
 
 (defun imp--send-state-ignore-errors (proc)
