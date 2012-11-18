@@ -83,6 +83,13 @@
   (setq imp-htmlize-filter (not imp-htmlize-filter))
   (imp--notify-clients))
 
+(defun imp-visit-buffer ()
+  "Visit the buffer in a browser."
+  (interactive)
+  (impatient-mode)
+  (browse-url (format "http://%s:%d/imp/live/%s"
+                      system-name httpd-port (buffer-name))))
+
 (defun imp-buffer-enabled-p (buffer)
   "Return t if buffer has impatient-mode enabled."
   (and buffer (with-current-buffer (get-buffer buffer) impatient-mode)))
