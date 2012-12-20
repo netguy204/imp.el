@@ -146,7 +146,7 @@
      ((equal (file-name-directory path) "/imp/live/")
       (httpd-redirect proc (concat path "/")))
      ((not (imp-buffer-enabled-p buffer)) (imp--private proc buffer-name))
-     ((and (> (length file) 0) buffer-dir)
+     ((and (not (string= file "./")) buffer-dir)
       (let* ((full-file-name (expand-file-name file buffer-dir))
              (live-buffer (remove-if-not
                            (lambda (buf) (equal full-file-name (buffer-file-name buf)))
