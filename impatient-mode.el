@@ -5,7 +5,7 @@
 ;; Author: Brian Taylor <el.wubo@gmail.com>
 ;; Version: 0.1
 ;; URL: https://github.com/netguy204/imp.el
-;; Package-Requires: ((simple-httpd "1.2.1") (htmlize "1.40"))
+;; Package-Requires: ((simple-httpd "1.4.0") (htmlize "1.40"))
 
 ;;; Commentary:
 
@@ -156,11 +156,10 @@
             (progn
                 (if (imp--should-not-cache-p path)
                     (httpd-send-header proc "text/plain" 200
-                                       '("Cache-Control" . "no-cache"))
+                                       :Cache-Control "no-cache")
                   (httpd-send-header proc "text/plain" 200
-                                     '("Cache-Control" .
-                                       "max-age=60, must-revalidate")))
-                (httpd-send-buffer proc (car live-buffer)))
+                                     :Cache-Control
+                                     "max-age=60, must-revalidate")))
           (httpd-send-file proc full-file-name req))))
      (t (imp-buffer-enabled-p buffer) (httpd-send-file proc index req)))))
 
@@ -181,8 +180,7 @@
             (insert-buffer-substring pretty-buffer)
             (kill-buffer pretty-buffer))
         (insert-buffer-substring buffer))
-      (httpd-send-header proc "text/plain" 200 '("Cache-Control" . "no-cache"))
-      (httpd-send-buffer proc (current-buffer)))))
+      (httpd-send-header proc "text/plain" 200 :Cache-Control "no-cache"))))
 
 (defun imp--send-state-ignore-errors (proc)
   (condition-case error-case
