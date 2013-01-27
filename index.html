@@ -33,6 +33,7 @@
       var next_period = min_period;
       var alpha = 1.2;
       var current_id = '-1';
+      $('head').append($('<title/>').text(decodeURI(buffer)));
 
       var nextTimeout = function() {
         var next = next_period;
