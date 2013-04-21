@@ -98,12 +98,6 @@
   "List of all buffers with impatient-mode enabled"
   (remove-if-not 'imp-buffer-enabled-p (buffer-list)))
 
-(defun imp--should-not-cache-p (path)
-  "True if the path should be stamped with a no-cache header"
-  (let ((mime-type (httpd-get-mime (file-name-extension path))))
-    (member mime-type '("text/css" "text/html" "text/xml"
-                        "text/plain" "text/javascript"))))
-
 (defun httpd/imp/static (proc path query req)
   "Serve up static files."
   (let* ((file (file-name-nondirectory path))
@@ -137,31 +131,13 @@
   (let* ((index (expand-file-name "index.html" imp-shim-root))
          (parts (cdr (split-string path "/")))
          (buffer-name (nth 2 parts))
-         (file (httpd-clean-path (mapconcat 'identity (nthcdr 3 parts) "/")))
          (buffer (get-buffer buffer-name))
-         (buffer-file (buffer-file-name buffer))
-         (buffer-dir (and buffer-file (file-name-directory buffer-file))))
-
+         (buffer-file (buffer-file-name buffer)))
     (cond
      ((equal (file-name-directory path) "/imp/live/")
       (httpd-redirect proc (concat path "/")))
-     ((not (imp-buffer-enabled-p buffer)) (imp--private proc buffer-name))
-     ((and (not (string= file "./")) buffer-dir)
-      (let* ((full-file-name (expand-file-name file buffer-dir))
-             (live-buffer (remove-if-not
-                           (lambda (buf) (equal full-file-name (buffer-file-name buf)))
-                           (imp--buffer-list))))
-        (add-to-list 'imp-related-files full-file-name)
-        (if live-buffer
-            (progn
-                (if (imp--should-not-cache-p path)
-                    (httpd-send-header proc "text/plain" 200
-                                       :Cache-Control "no-cache")
-                  (httpd-send-header proc "text/plain" 200
-                                     :Cache-Control
-                                     "max-age=60, must-revalidate")))
-          (httpd-send-file proc full-file-name req))))
-     (t (imp-buffer-enabled-p buffer) (httpd-send-file proc index req)))))
+     ((imp-buffer-enabled-p buffer) (httpd-send-file proc index req))
+     ((imp--private proc buffer-name)))))
 
 (defun httpd/imp (proc path &rest args)
   (cond
@@ -179,7 +155,7 @@
             (insert-buffer-substring pretty-buffer)
             (kill-buffer pretty-buffer))
         (insert-buffer-substring buffer))
-      (httpd-send-header proc "text/html" 200 :Cache-Control "no-cache" :X-Imp-Count id))))
+      (httpd-send-header proc "text/html" 200 :Cache-Control "no-cache"))))
 
 (defun imp--send-state-ignore-errors (proc)
   (condition-case error-case
@@ -204,7 +180,7 @@
         (when (member buffer-file imp-related-files)
           (imp--notify-clients))))))
 
-(defun httpd/imp/buffer (proc path query &rest args)
+(defun httpd/imp/update (proc path query &rest args)
   "Servlet that accepts long poll requests."
   (let* ((buffer-name (file-name-nondirectory path))
          (buffer (get-buffer buffer-name))
@@ -212,9 +188,31 @@
     (if (imp-buffer-enabled-p buffer)
         (with-current-buffer buffer
           (if (equal req-last-id imp-last-state)
-              (push proc imp-client-list)         ; this client is sync'd
-            (imp--send-state-ignore-errors proc))) ; this client is behind
+              (push proc imp-client-list)  ; this client is sync'd
+            (let ((last-state imp-last-state))
+              (with-httpd-buffer proc nil
+                (princ last-state)
+                (httpd-send-header proc "text/plain" 200
+                                   :Cache-Control "no-cache")))))
       (imp--private proc buffer-name))))
+
+(defun httpd/imp/buffer (proc path query req)
+  "Serve the contents of a buffer or a file around it."
+  (let* ((parts (split-string path "/"))
+         (buffer-name (nth 3 parts))
+         (buffer (get-buffer buffer-name))
+         (file (mapconcat 'identity (nthcdr 4 parts) "/"))
+         (file-requested (> (length file) 0)))
+    (if (not (imp-buffer-enabled-p buffer))
+        (imp--private proc buffer-name)
+      (with-current-buffer buffer
+        (if (and file-requested (buffer-file-name))
+            (let* ((clean (httpd-clean-path file))
+                   (root (file-name-directory (buffer-file-name)))
+                   (full-file-name (expand-file-name clean root)))
+              (add-to-list 'imp-related-files full-file-name)
+              (httpd-send-file proc full-file-name req))
+          (imp--send-state proc))))))
 
 (provide 'impatient-mode)
 
