@@ -44,7 +44,7 @@
       var resetTimeout = function() {
         next_period = min_period;
       };
-      
+
       var frameToDocument = function(iframe) {
         return (iframe.contentDocument) ? iframe.contentDocument : iframe.Document;
       };
@@ -57,15 +57,13 @@
         doc.close();
       };
 
-      var setIframe = function(newText) {
-        var spaceIdx = newText.indexOf(' ');
-        if(spaceIdx == -1) {
+      var setIframe = function(count, newText) {
+        if(!count) {
           // error parsing client result
-          printIframe('error parsing the response from emacs');
+          printIframe('0', 'error parsing the response from emacs');
         } else {
-          current_id = newText.substr(0, spaceIdx);
-          var html_string = newText.substr(spaceIdx + 1);
-          printIframe(html_string);
+          current_id = count;
+          printIframe(newText);
           lastText = newText;
         }
       };
@@ -73,9 +71,9 @@
       var refresh = function() {
         var url = "/imp/buffer/" + buffer;
 
-        var gotData = function(data) {
+        var gotData = function(data, status, xhr) {
           resetTimeout();
-          setIframe(data);
+          setIframe(xhr.getResponseHeader("X-Imp-Count"), data);
           refresh();
         };
 

@@ -174,13 +174,12 @@
         (htmlize imp-htmlize-filter)
         (buffer (current-buffer)))
     (with-temp-buffer
-      (insert id " ")
       (if htmlize
           (let ((pretty-buffer (htmlize-buffer buffer)))
             (insert-buffer-substring pretty-buffer)
             (kill-buffer pretty-buffer))
         (insert-buffer-substring buffer))
-      (httpd-send-header proc "text/plain" 200 :Cache-Control "no-cache"))))
+      (httpd-send-header proc "text/html" 200 :Cache-Control "no-cache" :X-Imp-Count id))))
 
 (defun imp--send-state-ignore-errors (proc)
   (condition-case error-case
