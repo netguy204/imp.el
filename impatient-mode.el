@@ -164,7 +164,13 @@
 
 (defun imp--notify-clients ()
   (while imp-client-list
-    (imp--send-state-ignore-errors (pop imp-client-list))))
+    (let ((proc (pop imp-client-list))
+          (last-state imp-last-state))
+      (ignore-errors
+        (with-httpd-buffer proc nil
+          (princ last-state)
+          (httpd-send-header proc "text/plain" 200
+                             :Cache-Control "no-cache"))))))
 
 (defun imp--on-change (&rest args)
   "Hook for after-change-functions."
