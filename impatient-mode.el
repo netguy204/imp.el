@@ -176,7 +176,7 @@
     (with-temp-buffer
       (insert id " ")
       (if htmlize
-          (let ((pretty-buffer (htmlize-buffer buffer)))
+          (let ((pretty-buffer (save-match-data (htmlize-buffer buffer))))
             (insert-buffer-substring pretty-buffer)
             (kill-buffer pretty-buffer))
         (insert-buffer-substring buffer))
