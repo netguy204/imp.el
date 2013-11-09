@@ -153,13 +153,13 @@
                            (imp--buffer-list))))
         (add-to-list 'imp-related-files full-file-name)
         (if live-buffer
-            (progn
-                (if (imp--should-not-cache-p path)
-                    (httpd-send-header proc "text/plain" 200
-                                       :Cache-Control "no-cache")
+            (with-current-buffer (first live-buffer)
+              (if (imp--should-not-cache-p path)
                   (httpd-send-header proc "text/plain" 200
-                                     :Cache-Control
-                                     "max-age=60, must-revalidate")))
+                                     :Cache-Control "no-cache")
+                (httpd-send-header proc "text/plain" 200
+                                   :Cache-Control
+                                   "max-age=60, must-revalidate")))
           (httpd-send-file proc full-file-name req))))
      (t (imp-buffer-enabled-p buffer) (httpd-send-file proc index req)))))
 
