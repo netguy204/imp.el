@@ -69,7 +69,7 @@
   (make-local-variable 'imp-client-list)
   (make-local-variable 'imp-last-state)
   (make-local-variable 'imp-related-files)
-  (setq imp-htmlize-filter (not (eq major-mode 'html-mode)))
+  (setq imp-htmlize-filter (not (memq major-mode '(html-mode web-mode))))
   (if impatient-mode
       (add-hook 'after-change-functions 'imp--on-change nil t)
     (remove-hook 'after-change-functions 'imp--on-change t)))
