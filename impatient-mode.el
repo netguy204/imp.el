@@ -175,7 +175,7 @@
         (buffer (current-buffer)))
     (with-temp-buffer
       (if htmlize
-          (let ((pretty-buffer (htmlize-buffer buffer)))
+          (let ((pretty-buffer (save-match-data (htmlize-buffer buffer))))
             (insert-buffer-substring pretty-buffer)
             (kill-buffer pretty-buffer))
         (insert-buffer-substring buffer))
