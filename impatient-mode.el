@@ -50,6 +50,9 @@
 (defvar imp-htmlize-filter t
   "If true, htmlize this buffer before serving.")
 
+(defvar imp-user-filter nil
+  "Per buffer html-producing function by user")
+
 (defvar imp-client-list ()
   "List of client processes watching the current buffer.")
 
@@ -69,6 +72,8 @@
   (make-local-variable 'imp-client-list)
   (make-local-variable 'imp-last-state)
   (make-local-variable 'imp-related-files)
+  (make-local-variable 'imp-user-filter)
+
   (setq imp-htmlize-filter (not (memq major-mode '(html-mode web-mode))))
   (if impatient-mode
       (add-hook 'after-change-functions 'imp--on-change nil t)
@@ -82,6 +87,17 @@
   (interactive)
   (setq imp-htmlize-filter (not imp-htmlize-filter))
   (imp--notify-clients))
+
+(defun imp-set-user-filter (f)
+  "Sets a user-defined filter for this buffer"
+  (interactive "aCustom filter: ")
+  (when (fboundp f)
+    (setq imp-user-filter f)))
+
+(defun imp-remove-user-filter ()
+  "Removes the user-defined filter for this buffer"
+  (interactive)
+  (setq imp-user-filter nil))
 
 (defun imp-visit-buffer ()
   "Visit the buffer in a browser."
@@ -173,13 +189,21 @@
 (defun imp--send-state (proc)
   (let ((id (number-to-string imp-last-state))
         (htmlize imp-htmlize-filter)
+	(user-filter imp-user-filter)
         (buffer (current-buffer)))
     (with-temp-buffer
-      (if htmlize
-          (let ((pretty-buffer (save-match-data (htmlize-buffer buffer))))
-            (insert-buffer-substring pretty-buffer)
-            (kill-buffer pretty-buffer))
-        (insert-buffer-substring buffer))
+      (cond
+       (user-filter
+	(let ((user-buffer (generate-new-buffer "*user-buffer*")))
+	  (with-current-buffer user-buffer
+	    (funcall user-filter))
+	  (insert-buffer-substring user-buffer)
+	  (kill-buffer user-buffer)))
+       (htmlize
+	(let ((pretty-buffer (save-match-data (htmlize-buffer buffer))))
+	  (insert-buffer-substring pretty-buffer)
+	  (kill-buffer pretty-buffer)))
+       (t (insert-buffer-substring buffer)))
       (httpd-send-header proc "text/html" 200 :Cache-Control "no-cache" :X-Imp-Count id))))
 
 (defun imp--send-state-ignore-errors (proc)
