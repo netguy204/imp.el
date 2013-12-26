@@ -196,7 +196,7 @@
        (user-filter
 	(let ((user-buffer (generate-new-buffer "*user-buffer*")))
 	  (with-current-buffer user-buffer
-	    (funcall user-filter))
+	    (funcall user-filter buffer))
 	  (insert-buffer-substring user-buffer)
 	  (kill-buffer user-buffer)))
        (htmlize
