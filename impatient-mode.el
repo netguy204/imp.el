@@ -204,15 +204,15 @@ buffer."
 
 (defun imp--send-state (proc)
   (let ((id (number-to-string imp-last-state))
-	(user-filter imp-user-filter)
+        (user-filter imp-user-filter)
         (buffer (current-buffer)))
     (with-temp-buffer
       (if user-filter
-	  (insert (with-temp-buffer
-		    (funcall user-filter buffer)
-		    (buffer-string)))
-	(insert-buffer-substring buffer))
-      (httpd-send-header proc "text/html" 200 :Cache-Control "no-cache" :X-Imp-Count id))))
+          (funcall user-filter buffer)
+        (insert-buffer-substring buffer))
+      (httpd-send-header proc "text/html" 200
+                         :Cache-Control "no-cache"
+                         :X-Imp-Count id))))
 
 (defun imp--send-state-ignore-errors (proc)
   (condition-case error-case
