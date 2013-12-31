@@ -84,18 +84,26 @@
   "Sets a user-defined filter for this buffer"
   (interactive "aCustom filter: ")
   (when (fboundp f)
-    (setq imp-user-filter f)))
+    (setq imp-user-filter f)
+    (imp--notify-clients)))
 
 (defun imp-remove-user-filter ()
   "Removes the user-defined filter for this buffer"
   (interactive)
-  (setq imp-user-filter 'imp--default-filter))
+  (setq imp-user-filter 'imp--default-filter)
+  (imp--notify-clients))
 
 (defun imp--default-filter (buffer)
   "Htmlization of buffers before sending to clients."
   (let ((html-buffer (save-match-data (htmlize-buffer buffer))))
     (insert-buffer-substring html-buffer)
     (kill-buffer html-buffer)))
+
+(defun imp-toggle-htmlize ()
+  (interactive)
+  (if (eq imp-user-filter #'imp--default-filter)
+      (imp-set-user-filter nil)
+    (imp-set-user-filter #'imp--default-filter)))
 
 (defun imp-visit-buffer ()
   "Visit the buffer in a browser."
@@ -195,7 +203,7 @@
 	      (funcall user-filter buffer))
 	    (insert-buffer-substring user-buffer)
 	    (kill-buffer user-buffer))
-	(t (insert-buffer-substring buffer)))
+	(insert-buffer-substring buffer))
       (httpd-send-header proc "text/html" 200 :Cache-Control "no-cache" :X-Imp-Count id))))
 
 (defun imp--send-state-ignore-errors (proc)
