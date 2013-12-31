@@ -71,7 +71,7 @@
   (make-local-variable 'imp-user-filter)
 
   (when (not (memq major-mode '(html-mode web-mode)))
-    (imp-set-user-filter 'default-user-filter))
+    (imp-set-user-filter 'imp--default-filter))
 
  (if impatient-mode
       (add-hook 'after-change-functions 'imp--on-change nil t)
@@ -89,9 +89,9 @@
 (defun imp-remove-user-filter ()
   "Removes the user-defined filter for this buffer"
   (interactive)
-  (setq imp-user-filter 'default-user-filter))
+  (setq imp-user-filter 'imp--default-filter))
 
-(defun default-user-filter (buffer)
+(defun imp--default-filter (buffer)
   "Htmlization of buffers before sending to clients."
   (let ((html-buffer (save-match-data (htmlize-buffer buffer))))
     (insert-buffer-substring html-buffer)
