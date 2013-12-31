@@ -48,7 +48,7 @@
   "Keymap for impatient-mode.")
 
 (make-variable-buffer-local
- (defvar imp-user-filter nil
+ (defvar imp-user-filter #'imp-htmlize-filter
    "Per buffer html-producing function by user."))
 
 (make-variable-buffer-local
@@ -63,18 +63,23 @@
  (defvar imp-related-files nil
    "Files that seem to be related to this buffer"))
 
+(defvar imp-default-user-filters
+  '((html-mode . nil)
+    (web-mode  . nil))
+  "Alist indicating which filter should be used for which modes.")
+
 ;;;###autoload
 (define-minor-mode impatient-mode
   "Serves the buffer live over HTTP."
   :group 'impatient-mode
   :lighter " imp"
   :keymap impatient-mode-map
-  (when (not (memq major-mode '(html-mode web-mode)))
-    (imp-set-user-filter 'imp--default-filter))
-
- (if impatient-mode
-      (add-hook 'after-change-functions 'imp--on-change nil t)
-    (remove-hook 'after-change-functions 'imp--on-change t)))
+  (if (not impatient-mode)
+      (remove-hook 'after-change-functions 'imp--on-change t)
+    (add-hook 'after-change-functions 'imp--on-change nil t)
+    (let ((lookup (assoc major-mode imp-default-user-filters)))
+      (when lookup
+        (imp-set-user-filter (cdr lookup))))))
 
 (defvar imp-shim-root (file-name-directory load-file-name)
   "Location of data files needed by impatient-mode.")
@@ -91,22 +96,24 @@ buffer."
     (imp--notify-clients)))
 
 (defun imp-remove-user-filter ()
-  "Removes the user-defined filter for this buffer"
+  "Removes the user-defined filter for this buffer."
   (interactive)
-  (setq imp-user-filter 'imp--default-filter)
+  (kill-local-variable 'imp-user-filter)
+  (incf imp-last-state)
   (imp--notify-clients))
 
-(defun imp--default-filter (buffer)
+(defun imp-htmlize-filter (buffer)
   "Htmlization of buffers before sending to clients."
   (let ((html-buffer (save-match-data (htmlize-buffer buffer))))
     (insert-buffer-substring html-buffer)
     (kill-buffer html-buffer)))
 
 (defun imp-toggle-htmlize ()
+  "Toggle htmlize of buffer."
   (interactive)
-  (if (eq imp-user-filter 'imp--default-filter)
+  (if (eq imp-user-filter 'imp-htmlize-filter)
       (setq imp-user-filter nil)
-    (imp-set-user-filter 'imp--default-filter)))
+    (imp-set-user-filter 'imp-htmlize-filter)))
 
 (defun imp-visit-buffer ()
   "Visit the buffer in a browser."
