@@ -89,7 +89,7 @@
 (defun imp-remove-user-filter ()
   "Removes the user-defined filter for this buffer"
   (interactive)
-  (setq imp-user-filter nil))
+  (setq imp-user-filter 'default-user-filter))
 
 (defun default-user-filter (buffer)
   "Htmlization of buffers before sending to clients."

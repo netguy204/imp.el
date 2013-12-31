@@ -62,9 +62,29 @@ cause your browser to live refresh the page when you edit a referenced
 resources.
 
 Except for `html-mode` buffers, buffer contents will be run through
-`htmlize` before sending to clients. This can be toggled at any time
-with `imp-toggle-htmlize`.
+a user-defined filter. The default user filter is `htmlize`, but you can set your own with `imp-set-user-filter`. The user filter is nothing but a regular elisp function. Here's how you would define a basic filter:
 
+```el
+(defun my-filter (_)
+  (princ "<html><body>test</body></html" (current-buffer)))
 ```
-M-x imp-toggle-htmlize
+
+The original editing buffer is passed along the user filter as a parameter, which we didn't use in the previous example, but which is demonstrated in the following example:
+
+```el
+(defun my-filter (buffer)
+  (let ((count 
+     (with-current-buffer buffer
+           (count-words-region (point-min) (point-max)))))
+    (princ (format  "<html><body>%d</body></html" count) (current-buffer))))
+```
+
+You can remove user filters with `imp-remove-user-filter`, which will reset the default `htmlize`. For reference, this is how the default user function is defined:
+
+```el
+(defun default-user-filter (buffer)
+  "Htmlization of buffers before sending to clients."
+  (let ((html-buffer (save-match-data (htmlize-buffer buffer))))
+    (insert-buffer-substring html-buffer)
+    (kill-buffer html-buffer)))
 ```
