@@ -88,10 +88,9 @@ FUNCTION should accept one argument, the buffer to be filtered,
 and will be evaluated with the output buffer set as the current
 buffer."
   (interactive "aCustom filter: ")
-  (when (fboundp function)
-    (setq imp-user-filter function)
-    (incf imp-last-state)
-    (imp--notify-clients)))
+  (setq imp-user-filter function)
+  (incf imp-last-state)
+  (imp--notify-clients))
 
 (defun imp-remove-user-filter ()
   "Sets the user-defined filter for this buffer to the default."
