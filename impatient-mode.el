@@ -154,7 +154,7 @@
         (add-to-list 'imp-related-files full-file-name)
         (if live-buffer
             (with-temp-buffer
-              (insert-buffer (first live-buffer))
+              (insert-buffer-substring (first live-buffer))
               (if (imp--should-not-cache-p path)
                   (httpd-send-header proc "text/plain" 200
                                      :Cache-Control "no-cache")
