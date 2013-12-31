@@ -198,11 +198,9 @@
         (buffer (current-buffer)))
     (with-temp-buffer
       (if user-filter
-	  (let ((user-buffer (generate-new-buffer "*user-buffer*")))
-	    (with-current-buffer user-buffer
-	      (funcall user-filter buffer))
-	    (insert-buffer-substring user-buffer)
-	    (kill-buffer user-buffer))
+	  (insert (with-temp-buffer
+		    (funcall user-filter buffer)
+		    (buffer-string)))
 	(insert-buffer-substring buffer))
       (httpd-send-header proc "text/html" 200 :Cache-Control "no-cache" :X-Imp-Count id))))
 
