@@ -47,9 +47,6 @@
 (defvar impatient-mode-map (make-sparse-keymap)
   "Keymap for impatient-mode.")
 
-(defvar imp-htmlize-filter t
-  "If true, htmlize this buffer before serving.")
-
 (defvar imp-user-filter nil
   "Per buffer html-producing function by user")
 
@@ -68,25 +65,20 @@
   :group 'impatient-mode
   :lighter " imp"
   :keymap impatient-mode-map
-  (make-local-variable 'imp-htmlize-filter)
   (make-local-variable 'imp-client-list)
   (make-local-variable 'imp-last-state)
   (make-local-variable 'imp-related-files)
   (make-local-variable 'imp-user-filter)
 
-  (setq imp-htmlize-filter (not (memq major-mode '(html-mode web-mode))))
-  (if impatient-mode
+  (when (not (memq major-mode '(html-mode web-mode)))
+    (imp-set-user-filter 'default-user-filter))
+
+ (if impatient-mode
       (add-hook 'after-change-functions 'imp--on-change nil t)
     (remove-hook 'after-change-functions 'imp--on-change t)))
 
 (defvar imp-shim-root (file-name-directory load-file-name)
   "Location of data files needed by impatient-mode.")
-
-(defun imp-toggle-htmlize ()
-  "Toggle htmlization of this buffer before sending to clients."
-  (interactive)
-  (setq imp-htmlize-filter (not imp-htmlize-filter))
-  (imp--notify-clients))
 
 (defun imp-set-user-filter (f)
   "Sets a user-defined filter for this buffer"
@@ -98,6 +90,10 @@
   "Removes the user-defined filter for this buffer"
   (interactive)
   (setq imp-user-filter nil))
+
+(defun default-user-filter (buffer)
+  "Htmlization of buffers before sending to clients."
+  (insert-buffer-substring (save-match-data (htmlize-buffer buffer))))
 
 (defun imp-visit-buffer ()
   "Visit the buffer in a browser."
@@ -188,22 +184,16 @@
 
 (defun imp--send-state (proc)
   (let ((id (number-to-string imp-last-state))
-        (htmlize imp-htmlize-filter)
 	(user-filter imp-user-filter)
         (buffer (current-buffer)))
     (with-temp-buffer
-      (cond
-       (user-filter
-	(let ((user-buffer (generate-new-buffer "*user-buffer*")))
-	  (with-current-buffer user-buffer
-	    (funcall user-filter buffer))
-	  (insert-buffer-substring user-buffer)
-	  (kill-buffer user-buffer)))
-       (htmlize
-	(let ((pretty-buffer (save-match-data (htmlize-buffer buffer))))
-	  (insert-buffer-substring pretty-buffer)
-	  (kill-buffer pretty-buffer)))
-       (t (insert-buffer-substring buffer)))
+      (if user-filter
+	  (let ((user-buffer (generate-new-buffer "*user-buffer*")))
+	    (with-current-buffer user-buffer
+	      (funcall user-filter buffer))
+	    (insert-buffer-substring user-buffer)
+	    (kill-buffer user-buffer))
+	(t (insert-buffer-substring buffer)))
       (httpd-send-header proc "text/html" 200 :Cache-Control "no-cache" :X-Imp-Count id))))
 
 (defun imp--send-state-ignore-errors (proc)
