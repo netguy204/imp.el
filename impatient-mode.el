@@ -101,9 +101,9 @@
 
 (defun imp-toggle-htmlize ()
   (interactive)
-  (if (eq imp-user-filter #'imp--default-filter)
-      (imp-set-user-filter nil)
-    (imp-set-user-filter #'imp--default-filter)))
+  (if (eq imp-user-filter 'imp--default-filter)
+      (setq imp-user-filter nil)
+    (imp-set-user-filter 'imp--default-filter)))
 
 (defun imp-visit-buffer ()
   "Visit the buffer in a browser."
