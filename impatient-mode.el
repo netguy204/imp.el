@@ -93,7 +93,9 @@
 
 (defun default-user-filter (buffer)
   "Htmlization of buffers before sending to clients."
-  (insert-buffer-substring (save-match-data (htmlize-buffer buffer))))
+  (let ((html-buffer (save-match-data (htmlize-buffer buffer))))
+    (insert-buffer-substring html-buffer)
+    (kill-buffer html-buffer)))
 
 (defun imp-visit-buffer ()
   "Visit the buffer in a browser."
