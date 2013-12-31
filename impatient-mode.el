@@ -77,9 +77,7 @@
   (if (not impatient-mode)
       (remove-hook 'after-change-functions 'imp--on-change t)
     (add-hook 'after-change-functions 'imp--on-change nil t)
-    (let ((lookup (assoc major-mode imp-default-user-filters)))
-      (when lookup
-        (imp-set-user-filter (cdr lookup))))))
+    (imp-remove-user-filter)))
 
 (defvar imp-shim-root (file-name-directory load-file-name)
   "Location of data files needed by impatient-mode.")
@@ -96,9 +94,12 @@ buffer."
     (imp--notify-clients)))
 
 (defun imp-remove-user-filter ()
-  "Removes the user-defined filter for this buffer."
+  "Sets the user-defined filter for this buffer to the default."
   (interactive)
-  (kill-local-variable 'imp-user-filter)
+  (let ((lookup (assoc major-mode imp-default-user-filters)))
+    (if lookup
+        (imp-set-user-filter (cdr lookup))
+      (kill-local-variable 'imp-user-filter)))
   (incf imp-last-state)
   (imp--notify-clients))
 
@@ -112,7 +113,7 @@ buffer."
   "Toggle htmlize of buffer."
   (interactive)
   (if (eq imp-user-filter 'imp-htmlize-filter)
-      (setq imp-user-filter nil)
+      (imp-set-user-filter nil)
     (imp-set-user-filter 'imp-htmlize-filter)))
 
 (defun imp-visit-buffer ()
