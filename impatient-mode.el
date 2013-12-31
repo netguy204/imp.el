@@ -47,17 +47,21 @@
 (defvar impatient-mode-map (make-sparse-keymap)
   "Keymap for impatient-mode.")
 
-(defvar imp-user-filter nil
-  "Per buffer html-producing function by user")
+(make-variable-buffer-local
+ (defvar imp-user-filter nil
+   "Per buffer html-producing function by user."))
 
-(defvar imp-client-list ()
-  "List of client processes watching the current buffer.")
+(make-variable-buffer-local
+ (defvar imp-client-list ()
+   "List of client processes watching the current buffer."))
 
-(defvar imp-last-state 0
-  "State sequence number.")
+(make-variable-buffer-local
+ (defvar imp-last-state 0
+   "State sequence number."))
 
-(defvar imp-related-files nil
-  "Files that seem to be related to this buffer")
+(make-variable-buffer-local
+ (defvar imp-related-files nil
+   "Files that seem to be related to this buffer"))
 
 ;;;###autoload
 (define-minor-mode impatient-mode
@@ -65,11 +69,6 @@
   :group 'impatient-mode
   :lighter " imp"
   :keymap impatient-mode-map
-  (make-local-variable 'imp-client-list)
-  (make-local-variable 'imp-last-state)
-  (make-local-variable 'imp-related-files)
-  (make-local-variable 'imp-user-filter)
-
   (when (not (memq major-mode '(html-mode web-mode)))
     (imp-set-user-filter 'imp--default-filter))
 
