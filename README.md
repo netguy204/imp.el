@@ -66,7 +66,7 @@ a user-defined filter. The default user filter is `htmlize`, but you can set you
 
 ```el
 (defun my-filter (_)
-  (princ "<html><body>test</body></html" (current-buffer)))
+  (princ "<html><body>test</body></html>" (current-buffer)))
 ```
 
 The original editing buffer is passed along the user filter as a parameter, which we didn't use in the previous example, but which is demonstrated in the following example:
@@ -76,7 +76,7 @@ The original editing buffer is passed along the user filter as a parameter, whic
   (let ((count 
      (with-current-buffer buffer
            (count-words-region (point-min) (point-max)))))
-    (princ (format  "<html><body>%d</body></html" count) (current-buffer))))
+    (princ (format  "<html><body>%d</body></html>" count) (current-buffer))))
 ```
 
 You can remove user filters with `imp-remove-user-filter`, which will reset the default `htmlize`. For reference, this is how the default user function is defined:
