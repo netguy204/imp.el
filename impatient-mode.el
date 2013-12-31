@@ -79,11 +79,15 @@
 (defvar imp-shim-root (file-name-directory load-file-name)
   "Location of data files needed by impatient-mode.")
 
-(defun imp-set-user-filter (f)
-  "Sets a user-defined filter for this buffer"
+(defun imp-set-user-filter (function)
+  "Sets a user-defined filter for this buffer.
+FUNCTION should accept one argument, the buffer to be filtered,
+and will be evaluated with the output buffer set as the current
+buffer."
   (interactive "aCustom filter: ")
-  (when (fboundp f)
-    (setq imp-user-filter f)
+  (when (fboundp function)
+    (setq imp-user-filter function)
+    (incf imp-last-state)
     (imp--notify-clients)))
 
 (defun imp-remove-user-filter ()
