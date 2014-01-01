@@ -47,17 +47,26 @@
 (defvar impatient-mode-map (make-sparse-keymap)
   "Keymap for impatient-mode.")
 
-(defvar imp-user-filter nil
-  "Per buffer html-producing function by user")
+(make-variable-buffer-local
+ (defvar imp-user-filter #'imp-htmlize-filter
+   "Per buffer html-producing function by user."))
 
-(defvar imp-client-list ()
-  "List of client processes watching the current buffer.")
+(make-variable-buffer-local
+ (defvar imp-client-list ()
+   "List of client processes watching the current buffer."))
 
-(defvar imp-last-state 0
-  "State sequence number.")
+(make-variable-buffer-local
+ (defvar imp-last-state 0
+   "State sequence number."))
 
-(defvar imp-related-files nil
-  "Files that seem to be related to this buffer")
+(make-variable-buffer-local
+ (defvar imp-related-files nil
+   "Files that seem to be related to this buffer"))
+
+(defvar imp-default-user-filters
+  '((html-mode . nil)
+    (web-mode  . nil))
+  "Alist indicating which filter should be used for which modes.")
 
 ;;;###autoload
 (define-minor-mode impatient-mode
@@ -65,45 +74,46 @@
   :group 'impatient-mode
   :lighter " imp"
   :keymap impatient-mode-map
-  (make-local-variable 'imp-client-list)
-  (make-local-variable 'imp-last-state)
-  (make-local-variable 'imp-related-files)
-  (make-local-variable 'imp-user-filter)
-
-  (when (not (memq major-mode '(html-mode web-mode)))
-    (imp-set-user-filter 'imp--default-filter))
-
- (if impatient-mode
-      (add-hook 'after-change-functions 'imp--on-change nil t)
-    (remove-hook 'after-change-functions 'imp--on-change t)))
+  (if (not impatient-mode)
+      (remove-hook 'after-change-functions 'imp--on-change t)
+    (add-hook 'after-change-functions 'imp--on-change nil t)
+    (imp-remove-user-filter)))
 
 (defvar imp-shim-root (file-name-directory load-file-name)
   "Location of data files needed by impatient-mode.")
 
-(defun imp-set-user-filter (f)
-  "Sets a user-defined filter for this buffer"
+(defun imp-set-user-filter (function)
+  "Sets a user-defined filter for this buffer.
+FUNCTION should accept one argument, the buffer to be filtered,
+and will be evaluated with the output buffer set as the current
+buffer."
   (interactive "aCustom filter: ")
-  (when (fboundp f)
-    (setq imp-user-filter f)
-    (imp--notify-clients)))
-
-(defun imp-remove-user-filter ()
-  "Removes the user-defined filter for this buffer"
-  (interactive)
-  (setq imp-user-filter 'imp--default-filter)
+  (setq imp-user-filter function)
+  (incf imp-last-state)
   (imp--notify-clients))
 
-(defun imp--default-filter (buffer)
+(defun imp-remove-user-filter ()
+  "Sets the user-defined filter for this buffer to the default."
+  (interactive)
+  (let ((lookup (assoc major-mode imp-default-user-filters)))
+    (if lookup
+        (imp-set-user-filter (cdr lookup))
+      (kill-local-variable 'imp-user-filter)))
+  (incf imp-last-state)
+  (imp--notify-clients))
+
+(defun imp-htmlize-filter (buffer)
   "Htmlization of buffers before sending to clients."
   (let ((html-buffer (save-match-data (htmlize-buffer buffer))))
     (insert-buffer-substring html-buffer)
     (kill-buffer html-buffer)))
 
 (defun imp-toggle-htmlize ()
+  "Toggle htmlize of buffer."
   (interactive)
-  (if (eq imp-user-filter 'imp--default-filter)
-      (setq imp-user-filter nil)
-    (imp-set-user-filter 'imp--default-filter)))
+  (if (eq imp-user-filter 'imp-htmlize-filter)
+      (imp-set-user-filter nil)
+    (imp-set-user-filter 'imp-htmlize-filter)))
 
 (defun imp-visit-buffer ()
   "Visit the buffer in a browser."
@@ -194,15 +204,15 @@
 
 (defun imp--send-state (proc)
   (let ((id (number-to-string imp-last-state))
-	(user-filter imp-user-filter)
+        (user-filter imp-user-filter)
         (buffer (current-buffer)))
     (with-temp-buffer
       (if user-filter
-	  (insert (with-temp-buffer
-		    (funcall user-filter buffer)
-		    (buffer-string)))
-	(insert-buffer-substring buffer))
-      (httpd-send-header proc "text/html" 200 :Cache-Control "no-cache" :X-Imp-Count id))))
+          (funcall user-filter buffer)
+        (insert-buffer-substring buffer))
+      (httpd-send-header proc "text/html" 200
+                         :Cache-Control "no-cache"
+                         :X-Imp-Count id))))
 
 (defun imp--send-state-ignore-errors (proc)
   (condition-case error-case
