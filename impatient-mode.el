@@ -5,7 +5,7 @@
 ;; Author: Brian Taylor <el.wubo@gmail.com>
 ;; Version: 0.1
 ;; URL: https://github.com/netguy204/imp.el
-;; Package-Requires: ((simple-httpd "1.4.0") (htmlize "1.40"))
+;; Package-Requires: ((cl-lib "0.3") (simple-httpd "1.4.0") (htmlize "1.40"))
 
 ;;; Commentary:
 
@@ -35,7 +35,7 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 (require 'url-util)
 (require 'simple-httpd)
 (require 'htmlize)
@@ -89,7 +89,7 @@ and will be evaluated with the output buffer set as the current
 buffer."
   (interactive "aCustom filter: ")
   (setq imp-user-filter function)
-  (incf imp-last-state)
+  (cl-incf imp-last-state)
   (imp--notify-clients))
 
 (defun imp-remove-user-filter ()
@@ -99,7 +99,7 @@ buffer."
     (if lookup
         (imp-set-user-filter (cdr lookup))
       (kill-local-variable 'imp-user-filter)))
-  (incf imp-last-state)
+  (cl-incf imp-last-state)
   (imp--notify-clients))
 
 (defun imp-htmlize-filter (buffer)
@@ -128,7 +128,7 @@ buffer."
 
 (defun imp--buffer-list ()
   "List of all buffers with impatient-mode enabled"
-  (remove-if-not 'imp-buffer-enabled-p (buffer-list)))
+  (cl-remove-if-not 'imp-buffer-enabled-p (buffer-list)))
 
 (defun imp--should-not-cache-p (path)
   "True if the path should be stamped with a no-cache header"
@@ -180,13 +180,13 @@ buffer."
      ((not (imp-buffer-enabled-p buffer)) (imp--private proc buffer-name))
      ((and (not (string= file "./")) buffer-dir)
       (let* ((full-file-name (expand-file-name file buffer-dir))
-             (live-buffer (remove-if-not
+             (live-buffer (cl-remove-if-not
                            (lambda (buf) (equal full-file-name (buffer-file-name buf)))
                            (imp--buffer-list))))
         (add-to-list 'imp-related-files full-file-name)
         (if live-buffer
             (with-temp-buffer
-              (insert-buffer-substring (first live-buffer))
+              (insert-buffer-substring (cl-first live-buffer))
               (if (imp--should-not-cache-p path)
                   (httpd-send-header proc "text/plain" 200
                                      :Cache-Control "no-cache")
@@ -225,7 +225,7 @@ buffer."
 
 (defun imp--on-change (&rest args)
   "Hook for after-change-functions."
-  (incf imp-last-state)
+  (cl-incf imp-last-state)
 
   ;; notify our clients
   (imp--notify-clients)
