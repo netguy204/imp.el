@@ -3,7 +3,7 @@
 ;; This is free and unencumbered software released into the public domain.
 
 ;; Author: Brian Taylor <el.wubo@gmail.com>
-;; Version: 0.1
+;; Version: 1.0.0
 ;; URL: https://github.com/netguy204/imp.el
 ;; Package-Requires: ((cl-lib "0.3") (simple-httpd "1.4.0") (htmlize "1.40"))
 
