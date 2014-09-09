@@ -146,7 +146,7 @@ buffer."
 
 (defun imp-serve-buffer-list (proc)
   "Serve a list of published buffers."
-  (with-httpd-buffer proc "text/html"
+  (with-httpd-buffer proc "text/html; charset=utf-8"
     (insert "<html><head>\n")
     (insert "<title>impatient-mode buffer list</title>\n")
     (insert "</head><body>\n")
