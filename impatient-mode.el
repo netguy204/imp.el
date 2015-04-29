@@ -119,8 +119,9 @@ buffer."
   "Visit the buffer in a browser."
   (interactive)
   (impatient-mode)
-  (browse-url (format "http://%s:%d/imp/live/%s"
-                      system-name httpd-port (buffer-name))))
+  (browse-url
+   (format "http://%s:%d/imp/live/%s/"
+           (system-name) httpd-port (url-hexify-string (buffer-name)))))
 
 (defun imp-buffer-enabled-p (buffer)
   "Return t if buffer has impatient-mode enabled."
