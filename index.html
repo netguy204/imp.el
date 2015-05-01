@@ -96,8 +96,8 @@
           // now we need to tweak the stylesheet links so that firefox will refresh them properly
           $('link', frameToDocument(iframeJQ[0])).each(function(index, el) {
             var href = $(el).attr('href');
-            // don't refresh the random data:text stylesheets that chrome inserts
-            if(href && href.indexOf('data:text') != 0) {
+            // Only refresh impatient-mode hosted content
+            if(href && !/^[a-zA-z]+:\/\//.exec(href)) {
               $(el).attr('href', $(el).attr('href') + '?' + new Date().getTime());
             }
           });
