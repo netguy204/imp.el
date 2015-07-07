@@ -59,7 +59,7 @@ buffer, and watch your changes appear as you type!
 If you are editing HTML that references resources in other files (like
 CSS) you can enable impatient-mode on those buffers as well. This will
 cause your browser to live refresh the page when you edit a referenced
-resources.
+resource.
 
 Except for `html-mode` buffers, buffer contents will be run through
 a user-defined filter. The default user filter is `htmlize`, but you can set your own with `imp-set-user-filter`. The user filter is nothing but a regular elisp function. Here's how you would define a basic filter:
