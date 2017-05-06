@@ -185,7 +185,8 @@ buffer."
              (live-buffer (cl-remove-if-not
                            (lambda (buf) (equal full-file-name (buffer-file-name buf)))
                            (imp--buffer-list))))
-        (add-to-list 'imp-related-files full-file-name)
+        (with-current-buffer buffer-name
+          (add-to-list 'imp-related-files full-file-name))
         (if live-buffer
             (with-temp-buffer
               (insert-buffer-substring (cl-first live-buffer))
