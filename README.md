@@ -88,3 +88,10 @@ You can remove user filters with `imp-remove-user-filter`, which will reset the 
     (insert-buffer-substring html-buffer)
     (kill-buffer html-buffer)))
 ```
+
+Security implications
+---------------------
+
+Please be aware that enabling `impatient-mode` exposes the whole directory in which the file resides, not only the file itself. If our file is accessible under `http://localhost:8080/imp/live/example.txt/`, it is possible to access `http://localhost:8080/imp/live/example.txt/a-file-in-the-same-directory/or-even/a-subdirectory-of-it.txt`. It's especially dangerous when enabling `impatient-mode` for files like `~/.bashrc` because it allows to access any file in the user's home directory files such as `~/.ssh/id_rsa`.
+
+This behavior is not a bug, it is needed for the HTML files to work properly along with their resources (such as CSS and JS). Please be aware of what is exposed and/or configure your filewall accordingly.
